@@ -9,12 +9,36 @@
 
 include_once('simple_html_dom.php');
 
+// initialize variable
+$ogp_title = "";
+$ogp_site_name = "";
+$ogp_description = "";
+$ogp_url = $target_url;
+$description = "";
+$base_url = "";
+$host_url = "";
+$image_array = array();
+
+
 function flush_result($msg){
 	header("Content-Type: application/json; charset=utf-8");
 	echo json_encode($msg);
 	exit(0);
 }
 
+function add_image($img){
+	global $image_array;
+
+	if( ! preg_match('/^(https?)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+(jpg|jpeg|gif|png|bmp))$/', $img) ){
+		// if it is not image file
+		return;
+	}
+	if( in_array($img, $image_array) ){
+		return;
+	}
+
+	$image_array[] = $img;
+}
 
 $target_url = "";
 if( strtoupper($_SERVER['REQUEST_METHOD']) === "POST" ){
@@ -40,16 +64,6 @@ if( is_null($html) ){
 }
 
 $url_info = parse_url($target_url);
-
-// initialize variable
-$ogp_title = "";
-$ogp_site_name = "";
-$ogp_description = "";
-$ogp_url = $target_url;
-$description = "";
-$base_url = "";
-$host_url = "";
-$image_array = array();
 
 foreach($html->find('base') as $element){
 	$base_url = $element->href;
@@ -84,7 +98,7 @@ foreach($html->find('meta') as $element){
 					$ogp_url = $content;
 					break;
 				case "image":
-					$image_array[] = $content;
+					add_image($content);
 					break;
 			}
 		}
@@ -115,23 +129,19 @@ foreach( $html->find( 'img' ) as $img ){
 		continue;
 
 	if( preg_match('/^(https?)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)$/', $img->src) ){
-		if( ! preg_match('/^(https?)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+(jpg|jpeg|gif|png|bmp))$/', $img->src) ){
-			// if it is not image file
-			continue;
-		}
 		$url_parts = parse_url($img->src);
 		if( $url_info['host'] == $url_parts['host'] ){
 			// if the host matches
-			$image_array[] = $img->src;
+			add_image( $img->src );
 		}
 	}
 	else{
 		if( substr($img->src, 0,1) == "/" ){
 			// if not relative path
-			$image_array[] = $host_url.substr($img->src, 1);
+			add_image( $host_url.substr($img->src, 1) );
 		}
 		else{
-			$image_array[] = $base_url.$img->src;
+			add_image( $base_url.$img->src );
 		}
 	}
 }
