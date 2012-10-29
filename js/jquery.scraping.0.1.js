@@ -25,7 +25,7 @@
     	function _initialize( settings ) {
 			if( settings.phpUrl == null ) return;
 			
-			scrapingInputObj.change(function(){
+			scrapingInputObj.on('blur', function(){
 				_imageList = null;
 				_imageIdx = 0;
 				$('.scraping_url_info_box').remove();

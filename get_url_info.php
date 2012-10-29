@@ -17,6 +17,7 @@ $ogp_url = $target_url;
 $description = "";
 $base_url = "";
 $host_url = "";
+$charset_name = "";
 $image_array = array();
 
 
@@ -65,6 +66,7 @@ if( is_null($html) ){
 
 $url_info = parse_url($target_url);
 
+$charset_name = $html->get("charset");
 foreach($html->find('base') as $element){
 	$base_url = $element->href;
 	$host_url = $element->href;
@@ -110,6 +112,16 @@ foreach($html->find('meta') as $element){
 				break;
 		}
 	}
+/*	else if( isset($element->http-equiv) && isset($element->http-equiv) &&
+		strtolower($element->http-equiv) == "content-type"){
+		if( isset($element->content) && preg_match('/charset/', $element->content) ){
+			$sp = preg_split('/charset/', $element->content);
+			if( count($sp) == 2 ){
+				$charset_name = str_replace('=', '', $sp[1];
+			}
+		}
+	}
+*/		
 }
 
 if( $ogp_title === "" ){
@@ -149,9 +161,28 @@ foreach( $html->find( 'img' ) as $img ){
 $html->clear();
 
 $result = array();
-$result["url"] = $ogp_url;
-$result["title"] = empty($ogp_title) ? (empty($ogp_site_name) ? $ogp_url : $ogp_site_name) : $ogp_title;
-$result["description"] = empty($ogp_description) ? $description : $ogp_description;
-$result["imgs"] = $image_array;
+if( isset($ogp_url) && $ogp_url != "" ){
+	$result["url"] = $ogp_url;
+	$result["title"] = $ogp_url;
+}
+else{
+	$result["url"] = $target_url;
+	$result["title"] = $target_url;
+}
 
+if( isset($ogp_title) && $ogp_title != "" ){
+	$result["title"] = empty($charset_name) ? $ogp_title : mb_convert_encoding($ogp_title, 'UTF-8', $charset_name);
+}
+elseif( isset($ogp_site_name) && $ogp_site_name != "" ){
+	$result["title"] = empty($charset_name) ? $ogp_site_name : mb_convert_encoding($ogp_site_name, 'UTF-8', 'auto');
+}
+
+if( isset($ogp_title) && $ogp_title != "" ){
+	$result["description"] = empty($charset_name) ? $ogp_description : mb_convert_encoding($ogp_description, 'UTF-8', 'auto');
+}
+else{
+	$result["description"] = empty($charset_name) ? $description : mb_convert_encoding($description, 'UTF-8', 'auto');
+}
+
+$result["imgs"] = $image_array;
 flush_result( $result );
