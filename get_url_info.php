@@ -13,7 +13,7 @@ include_once('simple_html_dom.php');
 $ogp_title = "";
 $ogp_site_name = "";
 $ogp_description = "";
-$ogp_url = $target_url;
+$ogp_url = "";
 $description = "";
 $base_url = "";
 $host_url = "";
@@ -41,6 +41,13 @@ function add_image($img){
 	$image_array[] = $img;
 }
 
+function is_valid_text($text){
+	if( isset($text) && $text !== "" && (mb_detect_encoding($text, 'UTF-8', true) !== FALSE)){
+		return TRUE;
+	}
+	return FALSE;
+}
+
 $target_url = "";
 if( strtoupper($_SERVER['REQUEST_METHOD']) === "POST" ){
 	$target_url = $_POST["target"]; 
@@ -48,6 +55,8 @@ if( strtoupper($_SERVER['REQUEST_METHOD']) === "POST" ){
 else{
 	$target_url = $_GET["target"];
 }
+
+$ogp_url = $target_url;
 
 // check parameter
 if( is_null($target_url) ){
@@ -66,7 +75,6 @@ if( is_null($html) ){
 
 $url_info = parse_url($target_url);
 
-$charset_name = $html->get("charset");
 foreach($html->find('base') as $element){
 	$base_url = $element->href;
 	$host_url = $element->href;
@@ -88,16 +96,16 @@ foreach($html->find('meta') as $element){
 		if( count($values) === 2 && !is_null($content) ){
 			switch(strtolower($values[1])){
 				case "description":
-					$ogp_description = $content;
+					$ogp_description = trim($content);
 					break;
 				case "site_name":
-					$ogp_site_name = $content;
+					$ogp_site_name = trim($content);
 					break;
 				case "title":
-					$ogp_title = $content;
+					$ogp_title = trim($content);
 					break;
 				case "url":
-					$ogp_url = $content;
+					$ogp_url = trim($content);
 					break;
 				case "image":
 					add_image($content);
@@ -108,20 +116,10 @@ foreach($html->find('meta') as $element){
 	else if( isset($element->name) && isset($element->content) ){
 		switch(strtolower($element->name)){
 			case "description":
-				$description = $element->content;
+				$description = trim($element->content);
 				break;
 		}
 	}
-/*	else if( isset($element->http-equiv) && isset($element->http-equiv) &&
-		strtolower($element->http-equiv) == "content-type"){
-		if( isset($element->content) && preg_match('/charset/', $element->content) ){
-			$sp = preg_split('/charset/', $element->content);
-			if( count($sp) == 2 ){
-				$charset_name = str_replace('=', '', $sp[1];
-			}
-		}
-	}
-*/		
 }
 
 if( $ogp_title === "" ){
@@ -129,7 +127,7 @@ if( $ogp_title === "" ){
 	$elements = $html->find( 'title' );
 	foreach( $html->find( 'title' ) as $element )
 	{
-		$ogp_title = $element->plaintext;
+		$ogp_title = trim($element->plaintext);
 		break;
 		
 	}
@@ -158,8 +156,6 @@ foreach( $html->find( 'img' ) as $img ){
 	}
 }
 
-$html->clear();
-
 $result = array();
 if( isset($ogp_url) && $ogp_url != "" ){
 	$result["url"] = $ogp_url;
@@ -170,19 +166,24 @@ else{
 	$result["title"] = $target_url;
 }
 
-if( isset($ogp_title) && $ogp_title != "" ){
-	$result["title"] = empty($charset_name) ? $ogp_title : mb_convert_encoding($ogp_title, 'UTF-8', $charset_name);
+$result["title"] = "";
+if( is_valid_text($ogp_title) ){
+	$result["title"] = $ogp_title;
 }
-elseif( isset($ogp_site_name) && $ogp_site_name != "" ){
-	$result["title"] = empty($charset_name) ? $ogp_site_name : mb_convert_encoding($ogp_site_name, 'UTF-8', 'auto');
+elseif( is_valid_text($ogp_site_name) ){
+	$result["title"] = $ogp_site_name;
 }
 
-if( isset($ogp_title) && $ogp_title != "" ){
-	$result["description"] = empty($charset_name) ? $ogp_description : mb_convert_encoding($ogp_description, 'UTF-8', 'auto');
+$result["description"] = "";
+if( is_valid_text($ogp_description) ){
+	$result["description"] = $ogp_description;
 }
-else{
-	$result["description"] = empty($charset_name) ? $description : mb_convert_encoding($description, 'UTF-8', 'auto');
+elseif( is_valid_text($description) ){
+	$result["description"] = $description;
 }
 
 $result["imgs"] = $image_array;
+
+$html->clear();
+
 flush_result( $result );
