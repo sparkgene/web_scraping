@@ -10,7 +10,7 @@ This plugin works with
 
 * Demo
 
- http://sparkgene.com/demos/web_scraping/scraping.html
+ http://sparkgene.com/demos/web_scraping/demo.html
 
 
 ### Usage
