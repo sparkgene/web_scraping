@@ -10,7 +10,7 @@
  * @example Visit https://github.com/sparkgene/web_scraping
  */
 
-(function($){
+;(function($){
 
     $.fn.Scraping = function(settings){
     	
