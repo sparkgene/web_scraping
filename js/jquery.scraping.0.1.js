@@ -1,10 +1,10 @@
 /**
  * jQuery Scraping plugin
  * This jQuery plugin display thumbnail image and simple introduction of the enterd url.
- * @name jquery.scraping.0.1.js
+ * @name jquery.scraping.0.2.js
  * @author Jun Ichikawa
- * @version 0.1
- * @date Oct 29, 2012
+ * @version 0.2
+ * @date Nov 9, 2012
  * @category jQuery plugin
  * @copyright (c) 2012 Jun Ichikawa
  * @example Visit https://github.com/sparkgene/web_scraping

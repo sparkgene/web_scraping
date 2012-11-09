@@ -4,7 +4,7 @@
  * Redistributions of files must retain the above copyright notice.
  *
  * @author Jun Ichikawa <jun1ka0@gmail.com>
- * @version 0.1
+ * @version 0.2
 */
 
 include_once('simple_html_dom.php');
@@ -19,9 +19,11 @@ $base_url = "";
 $host_url = "";
 $charset_name = "";
 $image_array = array();
-
+$ccTLD = array('ac','ad','ae','af','ag','ai','al','am','an','ao','aq','ar','as','at','au','aw','az','ba','bb','bd','be','bf','bg','bh','bi','bj','bm','bn','bo','br','bs','bt','bv','bw','by','bz','ca','cc','cd','cf','cg','ch','ci','ck','cl','cm','cn','co','cr','cu','cv','cx','cy','cz','de','dj','dk','dm','do','dz','ec','ee','eg','eh','er','es','et','fi','fj','fk','fm','fo','fr','ga','gd','ge','gf','gg','gh','gi','gl','gm','gn','gp','gq','gr','gs','gt','gu','gw','gy','hk','hm','hn','hr','ht','hu','id','ie','il','im','in','io','iq','ir','is','it','je','jm','jo','jp','ke','kg','kh','ki','km','kn','kp','kr','kw','ky','kz','la','lb','lc','li','lk','lr','ls','lt','lu','lv','ly','ma','mc','md','mg','mh','mk','ml','mm','mn','mo','mp','mq','mr','ms','mt','mu','mv','mw','mx','my','mz','na','nc','ne','nf','ng','ni','nl','no','np','nr','nu','nz','om','pa','pe','pf','pg','ph','pk','pl','pm','pn','pr','ps','pt','pw','py','qa','re','ro','ru','rw','sa','sb','sc','sd','se','sg','sh','si','sj','sk','sl','sm','sn','so','sr','st','sv','sy','sz','tc','td','tf','tg','th','tj','tk','tm','tn','to','tp','tr','tt','tv','tw','tz','ua','ug','uk','um','us','uy','uz','va','vc','ve','vg','vi','vn','vu','wf','ws','ye','yt','yu','za','zm','zw');
 
 function flush_result($msg){
+	header("Cache-Control: no-cache, must-revalidate");
+	header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 	header("Content-Type: application/json; charset=utf-8");
 	echo json_encode($msg);
 	exit(0);
@@ -30,7 +32,7 @@ function flush_result($msg){
 function add_image($img){
 	global $image_array;
 
-	if( ! preg_match('/^(https?)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+(jpg|jpeg|gif|png|bmp))$/', $img) ){
+	if( ! preg_match('/^(https?)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+(\.jpg|\.jpeg|\.png|\.bmp)(\?.*)?)$/', $img) ){
 		// if it is not image file
 		return;
 	}
@@ -39,6 +41,25 @@ function add_image($img){
 	}
 
 	$image_array[] = $img;
+}
+
+function is_subdomain($base_host_name, $img_host){
+	global $ccTLD;
+	
+	$img_host_list = explode('.', $img_host);
+	if( in_array($img_host_list[count($img_host_list)-1], $ccTLD) ){
+		// "ccTLD" check the third word
+		if( $img_host_list[count($img_host_list)-3] === $base_host_name){
+			return TRUE;
+		}
+	}
+	else{
+		// This is not "ccTLD" check the second word
+		if( $img_host_list[count($img_host_list)-2] === $base_host_name){
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 function is_valid_text($text){
@@ -55,7 +76,6 @@ if( strtoupper($_SERVER['REQUEST_METHOD']) === "POST" ){
 else{
 	$target_url = $_GET["target"];
 }
-
 $ogp_url = $target_url;
 
 // check parameter
@@ -134,6 +154,15 @@ if( $ogp_title === "" ){
 }
 
 // get images
+$base_host_list = explode('.', $url_info['host']);
+$base_host_name = "";
+if( in_array($base_host_list[count($base_host_list)-1], $ccTLD) ){
+	$base_host_name = $base_host_list[count($base_host_list)-3];
+}
+else{
+	$base_host_name = $base_host_list[count($base_host_list)-2];
+}
+
 foreach( $html->find( 'img' ) as $img ){
 	if( ! isset( $img->src ) )
 		continue;
@@ -142,6 +171,10 @@ foreach( $html->find( 'img' ) as $img ){
 		$url_parts = parse_url($img->src);
 		if( $url_info['host'] == $url_parts['host'] ){
 			// if the host matches
+			add_image( $img->src );
+		}
+		elseif( is_subdomain($base_host_name, $url_parts['host']) ){
+			// if it is sub domain
 			add_image( $img->src );
 		}
 	}
@@ -157,6 +190,7 @@ foreach( $html->find( 'img' ) as $img ){
 }
 
 $result = array();
+$result["host"] = $url_info['host'];
 if( isset($ogp_url) && $ogp_url != "" ){
 	$result["url"] = $ogp_url;
 	$result["title"] = $ogp_url;

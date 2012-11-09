@@ -40,6 +40,14 @@
  */
 
 /**
+ * NOTE: This version is updated by Jun Ichikawa <jun1ka0@gmail.com>
+ * Sometimes we don't know that the requested url always return html before request.
+ * for example, auto generated images.
+ * This version add a check that "Content-type" header include "html".
+ * 
+ */
+
+/**
  * All of the Defines for the classes below.
  * @author S.C. Chen <me578022@gmail.com>
  */
@@ -80,6 +88,19 @@ function file_get_html($url, $use_include_path = false, $context=null, $offset =
 	{
 		return false;
 	}
+
+	// >---ADDED by Jun Ichikawa
+	$is_html = FALSE;
+	foreach( $http_response_header as $response_header ){
+		$mached = preg_match('/html/', $response_header, $matches);
+		if( $mached ){
+			$is_html = TRUE;
+			break;
+		}
+	}
+	if( !$is_html ) return null;
+	// <---ADDED
+	
 	// The second parameter can force the selectors to all be lowercase.
 	$dom->load($contents, $lowercase, $stripRN);
 	return $dom;

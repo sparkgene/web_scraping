@@ -8,6 +8,11 @@ This plugin works with
 * JQuery (http://jquery.com/) tested with JQuery v1.8.*
 * simple_html_dom.php (http://simplehtmldom.sourceforge.net/)
 
+* Demo
+
+ http://sparkgene.com/demos/web_scraping/scraping.html
+
+
 ### Usage
 1. Put the "get_url_info.php" file on your web server.
 
@@ -15,8 +20,8 @@ This plugin works with
 
 ```javascript
 <script src="src/jquery.js"></script>
-<script src="js/jquery.scraping.0.1.js"></script>
-<link href="css/jquery.scraping.0.1.css" rel="stylesheet">
+<script src="js/jquery.scraping.0.2.js"></script>
+<link href="css/jquery.scraping.0.2.css" rel="stylesheet">
 ```
 
 3. Call the initialize for the input.
@@ -29,3 +34,13 @@ $(function() {
     });
 });
 ```
+
+Updates
+============
+
+## v0.2
+ Code refactoring.
+ Check requested content type.
+
+## v0.1
+ First release
